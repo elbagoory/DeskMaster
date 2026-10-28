@@ -1,0 +1,25 @@
+name: Suggest a cleanup rule
+description: An app that wastes disk space and how to clean it safely
+labels: [rule]
+body:
+  - type: input
+    id: app
+    attributes:
+      label: App
+      placeholder: e.g. Slack
+    validations:
+      required: true
+  - type: textarea
+    id: paths
+    attributes:
+      label: Folders (per OS)
+      placeholder: "Windows: %APPDATA%\\Slack\\Cache\nmacOS: ~/Library/Application Support/Slack/Cache"
+    validations:
+      required: true
+  - type: textarea
+    id: effect
+    attributes:
+      label: What happens after cleaning?
+      description: Does the app rebuild it? Is anything lost (logins, settings)? Must the app be closed?
+    validations:
+      required: true

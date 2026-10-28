@@ -1,0 +1,88 @@
+name: Release
+
+# Push a tag like v1.0.0 to build installers for Windows, macOS and Linux and publish them
+# (with auto-update feeds) as one GitHub release. See docs/RELEASING.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      max-parallel: 1 # uploads merge into the same release one after another
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            exe: DeskMaster.exe
+            icon: src/DeskMaster.App/Assets/deskmaster.ico
+          - rid: linux-x64
+            os: ubuntu-latest
+            exe: DeskMaster
+            icon: src/DeskMaster.App/Assets/deskmaster-256.png
+          - rid: osx-arm64
+            os: macos-latest
+            exe: DeskMaster
+            icon: ''
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test tests/DeskMaster.Core.Tests -c Release
+
+      - name: Publish app and CLI
+        shell: bash
+        run: |
+          version="${VERSION#v}"
+          dotnet publish src/DeskMaster.App -c Release -r ${{ matrix.rid }} --self-contained true \
+            -p:DebugType=none -p:Version="$version" -o publish
+          dotnet publish src/DeskMaster.Cli -c Release -r ${{ matrix.rid }} --self-contained true \
+            -p:PublishSingleFile=true -p:DebugType=none -p:Version="$version" -o publish
+          rm -f publish/*.pdb
+          cp LICENSE README.md publish/
+
+      - name: Install Velopack CLI
+        run: dotnet tool install -g vpk --version 1.2.161
+
+      - name: Prepare Windows signing (optional)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          CERT_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          if ($env:CERT_BASE64) {
+            [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\cert.pfx", [Convert]::FromBase64String($env:CERT_BASE64))
+            "SIGN_PARAMS=/f `"$env:RUNNER_TEMP\cert.pfx`" /p `"$env:CERT_PASSWORD`" /fd sha256 /tr http://timestamp.digicert.com /td sha256" >> $env:GITHUB_ENV
+          } else {
+            Write-Host "No signing certificate configured; building unsigned installers."
+          }
+
+      - name: Download previous release (for delta updates)
+        shell: bash
+        run: vpk download github --repoUrl "https://github.com/${{ github.repository }}" --token "${{ secrets.GITHUB_TOKEN }}" -o releases || true
+
+      - name: Pack installer
+        shell: bash
+        run: |
+          version="${VERSION#v}"
+          args=(-u DeskMaster -v "$version" -p publish -e "${{ matrix.exe }}" --packTitle DeskMaster --releaseNotes docs/release-notes.md -o releases)
+          if [ -n "${{ matrix.icon }}" ]; then args+=(-i "${{ matrix.icon }}"); fi
+          if [ -n "$SIGN_PARAMS" ]; then args+=(--signParams "$SIGN_PARAMS"); fi
+          vpk pack "${args[@]}"
+
+      - name: Upload to GitHub release
+        shell: bash
+        run: |
+          vpk upload github --repoUrl "https://github.com/${{ github.repository }}" --token "${{ secrets.GITHUB_TOKEN }}" \
+            -o releases --tag "$VERSION" --releaseName "DeskMaster ${VERSION#v}" --merge --publish

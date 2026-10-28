@@ -7,7 +7,7 @@
 
    ```bash
    git tag v1.0.0
-   git push origin main --tags
+   git push origin HEAD --tags
    ```
 
 3. The **Release** workflow (`.github/workflows/release.yml`) then runs the tests and builds installers with [Velopack](https://velopack.io):

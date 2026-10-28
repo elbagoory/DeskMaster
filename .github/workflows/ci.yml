@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build
+        run: dotnet build DeskMaster.slnx -c Release
+      - name: Core tests
+        run: dotnet test tests/DeskMaster.Core.Tests -c Release --no-build
+      - name: UI tests (headless)
+        run: dotnet test tests/DeskMaster.App.Tests -c Release --no-build
+      - name: CLI smoke test
+        shell: bash
+        run: |
+          dotnet run --project src/DeskMaster.Cli -c Release --no-build -- drives
+          dotnet run --project src/DeskMaster.Cli -c Release --no-build -- analyze --all
+          dotnet run --project src/DeskMaster.Cli -c Release --no-build -- scan "$HOME" --top 5
+          dotnet run --project src/DeskMaster.Cli -c Release --no-build -- movable
