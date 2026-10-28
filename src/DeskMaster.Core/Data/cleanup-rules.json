@@ -1,0 +1,550 @@
+// DeskMaster built-in cleanup rules.
+// Path tokens: {Home} {Temp} {Cache} {Config} {Data}; Windows only: {LocalAppData} {AppData}
+// {ProgramData} {WinDir} {SystemDrive}; macOS only: {Library}. Wildcards * and ? work per segment.
+// See docs/RULES.md before adding a rule.
+[
+  // ---------------------------------------------------------------- System
+  {
+    "id": "win-user-temp",
+    "name": "Temporary files",
+    "description": "Files apps left in your Temp folder. Only files older than 24 hours are removed, so running apps are not affected.",
+    "category": "System",
+    "paths": { "windows": ["{Temp}"] },
+    "minAgeHours": 24
+  },
+  {
+    "id": "win-system-temp",
+    "name": "Windows temporary files",
+    "description": "System-wide Temp folder used by Windows services and installers.",
+    "category": "System",
+    "requiresAdmin": true,
+    "paths": { "windows": ["{WinDir}/Temp"] },
+    "minAgeHours": 24
+  },
+  {
+    "id": "win-update-download",
+    "name": "Windows Update downloads",
+    "description": "Update packages Windows already installed. Windows downloads them again if needed.",
+    "category": "System",
+    "requiresAdmin": true,
+    "paths": { "windows": ["{WinDir}/SoftwareDistribution/Download"] },
+    "minAgeHours": 72
+  },
+  {
+    "id": "win-delivery-optimization",
+    "name": "Delivery Optimization cache",
+    "description": "Update pieces Windows keeps to share with other PCs.",
+    "category": "System",
+    "requiresAdmin": true,
+    "paths": { "windows": ["{WinDir}/ServiceProfiles/NetworkService/AppData/Local/Microsoft/Windows/DeliveryOptimization/Cache"] }
+  },
+  {
+    "id": "win-error-reports",
+    "name": "Error reports and crash dumps",
+    "description": "Crash reports and memory dumps that were already sent or are no longer needed.",
+    "category": "System",
+    "paths": {
+      "windows": [
+        "{LocalAppData}/CrashDumps",
+        "{LocalAppData}/Microsoft/Windows/WER/ReportArchive",
+        "{LocalAppData}/Microsoft/Windows/WER/ReportQueue"
+      ]
+    }
+  },
+  {
+    "id": "win-system-error-reports",
+    "name": "System error reports",
+    "description": "Windows Error Reporting archives and minidumps for the whole PC.",
+    "category": "System",
+    "requiresAdmin": true,
+    "paths": {
+      "windows": [
+        "{ProgramData}/Microsoft/Windows/WER/ReportArchive",
+        "{ProgramData}/Microsoft/Windows/WER/ReportQueue",
+        "{WinDir}/Minidump",
+        "{WinDir}/LiveKernelReports"
+      ]
+    }
+  },
+  {
+    "id": "win-thumbnail-cache",
+    "name": "Thumbnail cache",
+    "description": "Picture previews for File Explorer. Rebuilt automatically when you browse folders.",
+    "category": "System",
+    "paths": { "windows": ["{LocalAppData}/Microsoft/Windows/Explorer"] },
+    "include": ["thumbcache_*.db", "iconcache_*.db"]
+  },
+  {
+    "id": "recycle-bin",
+    "name": "Recycle Bin / Trash",
+    "description": "Files you already deleted. Emptying it removes them permanently.",
+    "category": "System",
+    "safety": "caution",
+    "handler": "recycle-bin",
+    "paths": {
+      "macos": ["{Home}/.Trash"],
+      "linux": ["{Data}/Trash/files", "{Data}/Trash/info"]
+    },
+    "platforms": ["windows", "macos", "linux"]
+  },
+  {
+    "id": "win-component-cleanup",
+    "name": "Windows component store cleanup",
+    "description": "Runs DISM to remove superseded Windows updates from WinSxS. Can take 5-15 minutes.",
+    "category": "System",
+    "safety": "caution",
+    "requiresAdmin": true,
+    "platforms": ["windows"],
+    "command": { "file": "dism.exe", "args": ["/Online", "/Cleanup-Image", "/StartComponentCleanup"] },
+    "notes": "Size cannot be estimated in advance; usually frees 1-5 GB."
+  },
+  {
+    "id": "win-hibernation",
+    "name": "Turn off hibernation",
+    "description": "Removes hiberfil.sys. Hibernate and Fast Startup stop working until you run 'powercfg /h on'.",
+    "category": "System",
+    "safety": "caution",
+    "requiresAdmin": true,
+    "estimateOnly": true,
+    "paths": { "windows": ["{SystemDrive}/hiberfil.sys"] },
+    "command": { "file": "powercfg.exe", "args": ["/h", "off"] }
+  },
+  {
+    "id": "mac-user-logs",
+    "name": "User logs",
+    "description": "Log files written by apps in your user Library.",
+    "category": "System",
+    "paths": { "macos": ["{Library}/Logs"] },
+    "minAgeHours": 72
+  },
+  {
+    "id": "mac-user-caches",
+    "name": "App caches",
+    "description": "Caches in ~/Library/Caches. Apps rebuild them, so the first launch may be slower.",
+    "category": "System",
+    "safety": "caution",
+    "paths": { "macos": ["{Cache}"] },
+    "minAgeHours": 72
+  },
+  {
+    "id": "linux-thumbnails",
+    "name": "Thumbnail cache",
+    "description": "Image previews created by your file manager.",
+    "category": "System",
+    "paths": { "linux": ["{Cache}/thumbnails"] }
+  },
+  {
+    "id": "linux-journal",
+    "name": "Old system journal logs",
+    "description": "Keeps the last 7 days of systemd journal logs and removes the rest.",
+    "category": "System",
+    "requiresAdmin": true,
+    "estimateOnly": true,
+    "paths": { "linux": ["/var/log/journal"] },
+    "command": { "file": "journalctl", "args": ["--vacuum-time=7d"] }
+  },
+  {
+    "id": "linux-apt-cache",
+    "name": "APT package cache",
+    "description": "Downloaded .deb packages that are already installed.",
+    "category": "System",
+    "requiresAdmin": true,
+    "paths": { "linux": ["/var/cache/apt/archives"] },
+    "include": ["*.deb"],
+    "command": { "file": "apt-get", "args": ["clean"] }
+  },
+  {
+    "id": "linux-dnf-cache",
+    "name": "DNF package cache",
+    "description": "Cached packages and metadata from dnf.",
+    "category": "System",
+    "requiresAdmin": true,
+    "estimateOnly": true,
+    "paths": { "linux": ["/var/cache/dnf"] },
+    "command": { "file": "dnf", "args": ["clean", "all"] }
+  },
+
+  {
+    "id": "unfinished-downloads",
+    "name": "Unfinished downloads",
+    "description": "Browser downloads that stopped and were not touched for 3 days (.crdownload, .part). Finished files are never touched.",
+    "category": "System",
+    "mode": "self",
+    "minAgeHours": 72,
+    "paths": {
+      "all": [
+        "{Downloads}/*.crdownload",
+        "{Downloads}/*.part",
+        "{Downloads}/*.partial",
+        "{Downloads}/*.download",
+        "{Downloads}/*.opdownload"
+      ]
+    }
+  },
+
+  // ---------------------------------------------------------------- Drivers
+  {
+    "id": "nvidia-app-driver-cache",
+    "name": "NVIDIA app driver downloads",
+    "description": "Every driver the NVIDIA app downloaded (about 1 GB each). Installed drivers keep working.",
+    "category": "Drivers",
+    "paths": {
+      "windows": [
+        "{ProgramData}/NVIDIA Corporation/NVIDIA app/UpdateFramework/ota-artifacts/grd",
+        "{ProgramData}/NVIDIA Corporation/Downloader"
+      ]
+    }
+  },
+  {
+    "id": "nvidia-shader-cache",
+    "name": "NVIDIA shader cache",
+    "description": "Compiled game shaders. Games rebuild them; the first launch may stutter briefly.",
+    "category": "Drivers",
+    "safety": "caution",
+    "paths": {
+      "windows": ["{LocalAppData}/NVIDIA/DXCache", "{LocalAppData}/NVIDIA/GLCache", "{LocalAppData}/D3DSCache"],
+      "linux": ["{Cache}/nvidia/GLCache"]
+    },
+    "minAgeHours": 24
+  },
+  {
+    "id": "amd-installer-cache",
+    "name": "AMD driver installer files",
+    "description": "Extracted AMD driver installers left on the system drive.",
+    "category": "Drivers",
+    "paths": { "windows": ["{SystemDrive}/AMD/*"] },
+    "mode": "self"
+  },
+
+  // ---------------------------------------------------------------- Browsers
+  {
+    "id": "browser-chrome",
+    "name": "Google Chrome cache",
+    "description": "Cached web pages and images. Your history, passwords and logins are kept.",
+    "category": "Browsers",
+    "closeProcesses": ["chrome", "Google Chrome"],
+    "paths": {
+      "windows": [
+        "{LocalAppData}/Google/Chrome/User Data/*/Cache",
+        "{LocalAppData}/Google/Chrome/User Data/*/Code Cache",
+        "{LocalAppData}/Google/Chrome/User Data/*/GPUCache"
+      ],
+      "macos": ["{Cache}/Google/Chrome/*/Cache", "{Cache}/Google/Chrome/*/Code Cache"],
+      "linux": ["{Cache}/google-chrome/*/Cache", "{Config}/google-chrome/*/Code Cache"]
+    }
+  },
+  {
+    "id": "browser-edge",
+    "name": "Microsoft Edge cache",
+    "description": "Cached web pages and images. Your history, passwords and logins are kept.",
+    "category": "Browsers",
+    "closeProcesses": ["msedge", "Microsoft Edge"],
+    "paths": {
+      "windows": [
+        "{LocalAppData}/Microsoft/Edge/User Data/*/Cache",
+        "{LocalAppData}/Microsoft/Edge/User Data/*/Code Cache",
+        "{LocalAppData}/Microsoft/Edge/User Data/*/GPUCache"
+      ],
+      "macos": ["{Cache}/Microsoft Edge/*/Cache"],
+      "linux": ["{Cache}/microsoft-edge/*/Cache"]
+    }
+  },
+  {
+    "id": "browser-brave",
+    "name": "Brave cache",
+    "description": "Cached web pages and images. Your history, passwords and logins are kept.",
+    "category": "Browsers",
+    "closeProcesses": ["brave", "Brave Browser"],
+    "paths": {
+      "windows": [
+        "{LocalAppData}/BraveSoftware/Brave-Browser/User Data/*/Cache",
+        "{LocalAppData}/BraveSoftware/Brave-Browser/User Data/*/Code Cache",
+        "{LocalAppData}/BraveSoftware/Brave-Browser/User Data/*/GPUCache"
+      ],
+      "macos": ["{Cache}/BraveSoftware/Brave-Browser/*/Cache"],
+      "linux": ["{Cache}/BraveSoftware/Brave-Browser/*/Cache"]
+    }
+  },
+  {
+    "id": "browser-firefox",
+    "name": "Firefox cache",
+    "description": "Cached web pages and images. Your history, passwords and logins are kept.",
+    "category": "Browsers",
+    "closeProcesses": ["firefox"],
+    "paths": {
+      "windows": ["{LocalAppData}/Mozilla/Firefox/Profiles/*/cache2"],
+      "macos": ["{Cache}/Firefox/Profiles/*/cache2"],
+      "linux": ["{Cache}/mozilla/firefox/*/cache2"]
+    }
+  },
+
+  // ---------------------------------------------------------------- Developer tools
+  {
+    "id": "dev-npm",
+    "name": "npm cache",
+    "description": "Downloaded npm packages. Projects download what they need on the next install.",
+    "category": "Developer tools",
+    "paths": {
+      "windows": ["{LocalAppData}/npm-cache/_cacache"],
+      "macos": ["{Home}/.npm/_cacache"],
+      "linux": ["{Home}/.npm/_cacache"]
+    },
+    "command": { "file": "npm", "args": ["cache", "clean", "--force"] }
+  },
+  {
+    "id": "dev-yarn",
+    "name": "Yarn cache",
+    "description": "Downloaded Yarn packages.",
+    "category": "Developer tools",
+    "paths": {
+      "windows": ["{LocalAppData}/Yarn/Cache"],
+      "macos": ["{Cache}/Yarn"],
+      "linux": ["{Cache}/yarn"]
+    }
+  },
+  {
+    "id": "dev-pnpm",
+    "name": "pnpm store (unused packages)",
+    "description": "Removes packages from the pnpm store that no project references.",
+    "category": "Developer tools",
+    "estimateOnly": true,
+    "paths": {
+      "windows": ["{LocalAppData}/pnpm/store"],
+      "macos": ["{Library}/pnpm/store"],
+      "linux": ["{Data}/pnpm/store"]
+    },
+    "command": { "file": "pnpm", "args": ["store", "prune"] },
+    "notes": "Shows the whole store size; only unused packages are removed."
+  },
+  {
+    "id": "dev-nuget",
+    "name": "NuGet caches",
+    "description": ".NET packages and HTTP cache. Projects restore what they need on the next build.",
+    "category": "Developer tools",
+    "closeProcesses": ["devenv"],
+    "paths": {
+      "windows": ["{Home}/.nuget/packages", "{LocalAppData}/NuGet/v3-cache", "{LocalAppData}/NuGet/plugins-cache"],
+      "macos": ["{Home}/.nuget/packages", "{Home}/.local/share/NuGet/http-cache"],
+      "linux": ["{Home}/.nuget/packages", "{Home}/.local/share/NuGet/http-cache"]
+    },
+    "command": { "file": "dotnet", "args": ["nuget", "locals", "all", "--clear"] }
+  },
+  {
+    "id": "dev-pip",
+    "name": "pip cache",
+    "description": "Downloaded Python wheels.",
+    "category": "Developer tools",
+    "paths": {
+      "windows": ["{LocalAppData}/pip/Cache"],
+      "macos": ["{Cache}/pip"],
+      "linux": ["{Cache}/pip"]
+    }
+  },
+  {
+    "id": "dev-uv",
+    "name": "uv cache",
+    "description": "Python packages cached by uv.",
+    "category": "Developer tools",
+    "paths": {
+      "windows": ["{LocalAppData}/uv/cache"],
+      "macos": ["{Cache}/uv"],
+      "linux": ["{Cache}/uv"]
+    },
+    "command": { "file": "uv", "args": ["cache", "clean"] }
+  },
+  {
+    "id": "dev-gradle",
+    "name": "Gradle caches",
+    "description": "Downloaded dependencies and build caches. The next Gradle build downloads them again.",
+    "category": "Developer tools",
+    "safety": "caution",
+    "closeProcesses": ["java", "studio64"],
+    "paths": { "all": ["{Home}/.gradle/caches"] }
+  },
+  {
+    "id": "dev-maven",
+    "name": "Maven repository",
+    "description": "Downloaded Java libraries. The next Maven build downloads them again.",
+    "category": "Developer tools",
+    "safety": "caution",
+    "paths": { "all": ["{Home}/.m2/repository"] }
+  },
+  {
+    "id": "dev-cargo",
+    "name": "Cargo registry cache",
+    "description": "Downloaded Rust crate archives.",
+    "category": "Developer tools",
+    "paths": { "all": ["{Home}/.cargo/registry/cache"] }
+  },
+  {
+    "id": "dev-go-build",
+    "name": "Go build cache",
+    "description": "Compiled Go packages.",
+    "category": "Developer tools",
+    "paths": {
+      "windows": ["{LocalAppData}/go-build"],
+      "macos": ["{Cache}/go-build"],
+      "linux": ["{Cache}/go-build"]
+    },
+    "command": { "file": "go", "args": ["clean", "-cache"] }
+  },
+  {
+    "id": "dev-docker",
+    "name": "Docker unused data",
+    "description": "Stopped containers, unused networks, dangling images and build cache (docker system prune).",
+    "category": "Developer tools",
+    "safety": "caution",
+    "platforms": ["windows", "macos", "linux"],
+    "command": { "file": "docker", "args": ["system", "prune", "-f"] },
+    "notes": "Size cannot be estimated in advance. Docker Desktop's disk image does not shrink automatically."
+  },
+  {
+    "id": "wsl-disk-compact",
+    "name": "Shrink WSL and Docker disk images",
+    "description": "Linux (WSL) and Docker Desktop disks grow but never shrink by themselves. This compacts them so deleted Linux files free space on Windows. All WSL distros are shut down first.",
+    "category": "Developer tools",
+    "safety": "caution",
+    "requiresAdmin": true,
+    "handler": "wsl-compact",
+    "mode": "self",
+    "estimateOnly": true,
+    "closeProcesses": ["Docker Desktop", "com.docker.backend"],
+    "paths": {
+      "windows": [
+        "{LocalAppData}/Docker/wsl/disk/docker_data.vhdx",
+        "{LocalAppData}/Docker/wsl/data/ext4.vhdx",
+        "{LocalAppData}/Docker/wsl/main/ext4.vhdx",
+        "{LocalAppData}/Packages/*/LocalState/ext4.vhdx",
+        "{LocalAppData}/wsl/*/ext4.vhdx"
+      ]
+    },
+    "notes": "Run 'Docker unused data' first for the biggest gain. Takes a few minutes per disk."
+  },
+  {
+    "id": "dev-xcode-derived",
+    "name": "Xcode DerivedData",
+    "description": "Build products and indexes. Xcode rebuilds them on the next build.",
+    "category": "Developer tools",
+    "closeProcesses": ["Xcode"],
+    "paths": { "macos": ["{Library}/Developer/Xcode/DerivedData"] }
+  },
+  {
+    "id": "dev-xcode-device-support",
+    "name": "Old iOS device support files",
+    "description": "Debug symbols for iOS versions you connected in the past. Reconnecting a device downloads them again.",
+    "category": "Developer tools",
+    "safety": "caution",
+    "paths": { "macos": ["{Library}/Developer/Xcode/iOS DeviceSupport"] }
+  },
+  {
+    "id": "dev-vs-cache",
+    "name": "Visual Studio component cache",
+    "description": "MEF component caches that Visual Studio rebuilds at startup.",
+    "category": "Developer tools",
+    "closeProcesses": ["devenv"],
+    "paths": { "windows": ["{LocalAppData}/Microsoft/VisualStudio/*/ComponentModelCache"] }
+  },
+  {
+    "id": "dev-jetbrains-logs",
+    "name": "JetBrains IDE logs",
+    "description": "Log files from IntelliJ, Rider, PyCharm and other JetBrains IDEs.",
+    "category": "Developer tools",
+    "paths": {
+      "windows": ["{LocalAppData}/JetBrains/*/log"],
+      "macos": ["{Library}/Logs/JetBrains"],
+      "linux": ["{Cache}/JetBrains/*/log"]
+    }
+  },
+
+  // ---------------------------------------------------------------- Editors
+  {
+    "id": "editor-vscode-cache",
+    "name": "VS Code caches",
+    "description": "Cached data, old extension downloads and logs. Settings and extensions are kept.",
+    "category": "Editors",
+    "closeProcesses": ["Code"],
+    "paths": {
+      "all": [
+        "{Config}/Code/CachedData",
+        "{Config}/Code/Cache",
+        "{Config}/Code/CachedExtensionVSIXs",
+        "{Config}/Code/logs"
+      ]
+    }
+  },
+  {
+    "id": "editor-cursor-cache",
+    "name": "Cursor caches",
+    "description": "Cached data, old extension downloads and logs. Settings, chats and extensions are kept.",
+    "category": "Editors",
+    "closeProcesses": ["Cursor"],
+    "paths": {
+      "all": [
+        "{Config}/Cursor/CachedData",
+        "{Config}/Cursor/Cache",
+        "{Config}/Cursor/CachedExtensionVSIXs",
+        "{Config}/Cursor/logs"
+      ]
+    }
+  },
+  {
+    "id": "editor-state-backups",
+    "name": "Editor database backups",
+    "description": "Backup copies of the VS Code / Cursor state database (can be several GB).",
+    "category": "Editors",
+    "mode": "self",
+    "paths": {
+      "all": [
+        "{Config}/Cursor/User/globalStorage/state.vscdb.backup",
+        "{Config}/Code/User/globalStorage/state.vscdb.backup"
+      ]
+    }
+  },
+
+  // ---------------------------------------------------------------- Apps
+  {
+    "id": "app-teams-cache",
+    "name": "Microsoft Teams cache",
+    "description": "Cached images and files for Teams. You stay signed in.",
+    "category": "Apps",
+    "closeProcesses": ["ms-teams", "Teams"],
+    "paths": {
+      "windows": [
+        "{LocalAppData}/Packages/MSTeams_8wekyb3d8bbwe/LocalCache/Microsoft/MSTeams/EBWebView/Default/Cache",
+        "{AppData}/Microsoft/Teams/Cache"
+      ]
+    }
+  },
+  {
+    "id": "app-spotify-cache",
+    "name": "Spotify cache",
+    "description": "Streamed songs Spotify keeps locally. Downloaded playlists are kept.",
+    "category": "Apps",
+    "closeProcesses": ["Spotify"],
+    "paths": {
+      "windows": ["{LocalAppData}/Spotify/Data"],
+      "macos": ["{Cache}/com.spotify.client/Data"],
+      "linux": ["{Cache}/spotify/Data"]
+    }
+  },
+  {
+    "id": "app-discord-cache",
+    "name": "Discord cache",
+    "description": "Cached images and videos from chats.",
+    "category": "Apps",
+    "closeProcesses": ["Discord"],
+    "paths": {
+      "all": ["{Config}/discord/Cache", "{Config}/discord/Code Cache"]
+    }
+  },
+
+  // ---------------------------------------------------------------- AI & models
+  {
+    "id": "ai-huggingface-cache",
+    "name": "Hugging Face model cache",
+    "description": "Downloaded models and datasets. They are downloaded again the next time a script needs them.",
+    "category": "AI & models",
+    "safety": "caution",
+    "paths": { "all": ["{Home}/.cache/huggingface/hub"], "macos": ["{Cache}/huggingface/hub"] }
+  }
+]

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Renders the app without a screen and saves PNGs, e.g. for docs/screenshots.
+       Usage: dotnet run (project tools/Screenshots) then args: outDir folderToScan [en or ar] -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DeskMaster.App\DeskMaster.App.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,95 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="using:DeskMaster.App.Localization"
+        xmlns:vm="using:DeskMaster.App.ViewModels"
+        x:Class="DeskMaster.App.Views.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        Width="560" Height="680" MinWidth="460"
+        WindowStartupLocation="CenterOwner"
+        Icon="/Assets/deskmaster.ico"
+        Title="{l:T 'DeskMaster settings'}">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="24" Spacing="16">
+      <TextBlock Text="{l:T 'Settings'}" Classes="title" />
+
+      <Border Classes="card banner error" Padding="12,10"
+              IsVisible="{Binding Notice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <TextBlock Text="{Binding Notice}" TextWrapping="Wrap" />
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <TextBlock Text="{l:T 'Appearance'}" Classes="h3" />
+          <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,8,Auto">
+            <TextBlock Text="{l:T 'Theme'}" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" HorizontalAlignment="Stretch">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:Choice"><TextBlock Text="{Binding Label}" /></DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Grid.Row="2" Text="{l:T 'Language'}" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" HorizontalAlignment="Stretch">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:Choice"><TextBlock Text="{Binding Label}" /></DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{l:T 'Running in the background'}" Classes="h3" />
+          <CheckBox IsChecked="{Binding KeepRunningInTray}" Content="{l:T 'Keep running in the tray when I close the window'}" />
+          <CheckBox IsChecked="{Binding StartWithSystem}" Content="{Binding StartWithSystemLabel}" />
+          <TextBlock Classes="subtle small" TextWrapping="Wrap"
+                     Text="{l:T 'Alerts and automatic cleanup only work while DeskMaster is running (in the window or the tray).'}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{l:T 'Low disk space alerts'}" Classes="h3" />
+          <CheckBox IsChecked="{Binding LowSpaceAlerts}" Content="{l:T 'Warn me when a drive is almost full'}" />
+          <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding LowSpaceAlerts}">
+            <TextBlock Text="{l:T 'When less than'}" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding LowSpacePercent}" Minimum="1" Maximum="50" Increment="1" FormatString="0" Width="110" />
+            <TextBlock Text="{l:T '% or'}" VerticalAlignment="Center" />
+            <NumericUpDown Value="{Binding LowSpaceGb}" Minimum="1" Maximum="500" Increment="5" FormatString="0" Width="110" />
+            <TextBlock Text="{l:T 'GB is free'}" VerticalAlignment="Center" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{l:T 'Automatic cleanup'}" Classes="h3" />
+          <CheckBox IsChecked="{Binding AutoClean}" Content="{l:T 'Clean safe items automatically'}" />
+          <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding AutoClean}">
+            <TextBlock Text="{l:T 'Every'}" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding DayOptions}" SelectedItem="{Binding AutoCleanDays}" />
+            <TextBlock Text="{l:T 'days'}" VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBlock Classes="subtle small" TextWrapping="Wrap"
+                     Text="{l:T 'Only items marked Safe that need no administrator rights: temp files, caches and leftovers. Nothing marked Caution is ever cleaned automatically.'}" />
+          <TextBlock Text="{Binding LastAutoCleanText}" Classes="subtle small" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{l:T 'Updates and data'}" Classes="h3" />
+          <CheckBox IsChecked="{Binding CheckForUpdates}" Content="{l:T 'Check for new versions when DeskMaster starts'}" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="{l:T 'Check for updates now'}" Command="{Binding CheckUpdatesNowCommand}" />
+            <Button Content="{l:T 'Open settings and log folder'}" Command="{Binding OpenSettingsFolderCommand}" />
+          </StackPanel>
+          <TextBlock Text="{Binding UpdateStatus}" Classes="subtle small" TextWrapping="Wrap"
+                     IsVisible="{Binding UpdateStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Text="{Binding VersionText}" Classes="subtle small" />
+          <SelectableTextBlock Text="{Binding SettingsFolder}" Classes="mono subtle" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

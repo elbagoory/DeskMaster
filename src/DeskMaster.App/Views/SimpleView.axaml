@@ -1,0 +1,200 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="using:DeskMaster.App.Localization"
+             xmlns:vm="using:DeskMaster.App.ViewModels"
+             x:Class="DeskMaster.App.Views.SimpleView"
+             x:DataType="vm:MainViewModel">
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="24" Spacing="18" MaxWidth="1000">
+
+      <!-- Drives -->
+      <ItemsControl ItemsSource="{Binding Drives}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel Orientation="Horizontal" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:DriveItemViewModel">
+            <Border Classes="card" Width="300" Margin="0,0,14,14" Padding="18">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Name}" Classes="h3" TextTrimming="CharacterEllipsis" />
+                  <Border Grid.Column="1" Classes="badge caution" IsVisible="{Binding IsLow}">
+                    <TextBlock Text="{l:T 'Low space'}" />
+                  </Border>
+                </Grid>
+                <TextBlock Text="{Binding FreeText}" FontSize="24" FontWeight="Bold" />
+                <ProgressBar Classes="usage" Classes.low="{Binding IsLow}" Value="{Binding UsedPercent}" Maximum="100" />
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Caption}" Classes="subtle small" />
+                  <TextBlock Grid.Column="1" Text="{Binding Kind}" Classes="subtle small" />
+                </Grid>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <!-- Clean up -->
+      <Border Classes="card">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{l:T 'Free up space'}" Classes="h2" />
+              <TextBlock Classes="subtle" TextWrapping="Wrap"
+                         Text="{l:T 'Caches and leftovers that apps rebuild on their own. Safe items are already ticked.'}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Cleanup.SelectedSizeText}" Classes="big-number" HorizontalAlignment="Right" />
+              <TextBlock Text="{Binding Cleanup.SelectedCountText}" Classes="subtle small" HorizontalAlignment="Right" />
+            </StackPanel>
+          </Grid>
+
+          <StackPanel Spacing="6" IsVisible="{Binding Cleanup.IsBusy}">
+            <ProgressBar Value="{Binding Cleanup.ProgressValue}" Maximum="100" Height="6" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding Cleanup.ProgressText}" Classes="subtle small" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="{l:T 'Cancel'}" Command="{Binding Cleanup.CancelCleanCommand}" IsVisible="{Binding Cleanup.IsCleaning}" />
+            </Grid>
+          </StackPanel>
+
+          <Border Classes="card" Padding="12,10" Background="{DynamicResource SuccessBannerBrush}" BorderThickness="0"
+                  IsVisible="{Binding Cleanup.ResultMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding Cleanup.ResultMessage}" TextWrapping="Wrap" FontWeight="SemiBold" />
+          </Border>
+
+          <ItemsControl ItemsSource="{Binding Cleanup.SimpleItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:FindingItemViewModel">
+                <Border Padding="4,10" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource CardBorderBrush}">
+                  <Grid ColumnDefinitions="Auto,*,Auto,100">
+                    <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding IsReady}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Spacing="2" Margin="4,0,12,0" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Description}" Classes="subtle small" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <Border Classes="badge caution" IsVisible="{Binding IsCaution}">
+                        <TextBlock Text="{l:T 'Caution'}" />
+                      </Border>
+                      <Border Classes="badge info" IsVisible="{Binding IsBlocked}">
+                        <TextBlock Text="{Binding StatusText}" />
+                      </Border>
+                    </StackPanel>
+                    <TextBlock Grid.Column="3" Text="{Binding SizeText}" FontWeight="SemiBold"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <TextBlock Classes="subtle" IsVisible="{Binding !Cleanup.HasResults}" Text="{l:T 'Checking your computer...'}" />
+
+          <Border Classes="card" Padding="12,10" IsVisible="{Binding Cleanup.HasAdminItems}">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="{Binding Cleanup.AdminSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding ElevationHint}" Classes="subtle small" TextWrapping="Wrap" />
+              </StackPanel>
+              <Button Grid.Column="1" Content="{l:T 'Restart as administrator'}" IsVisible="{Binding CanElevate}"
+                      Command="{Binding RestartAsAdminCommand}" VerticalAlignment="Center" />
+            </Grid>
+          </Border>
+
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Classes="accent big" Content="{l:T 'Clean selected'}"
+                    Command="{Binding Cleanup.CleanSelectedCommand}">
+              <Button.IsEnabled>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                  <Binding Path="Cleanup.HasSelection" />
+                  <Binding Path="!Cleanup.IsBusy" />
+                </MultiBinding>
+              </Button.IsEnabled>
+            </Button>
+            <Button Classes="big" Content="{l:T 'Check again'}" Command="{Binding Cleanup.AnalyzeCommand}"
+                    IsEnabled="{Binding !Cleanup.IsBusy}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Move big folders -->
+      <Border Classes="card" IsVisible="{Binding Move.HasSuggestions}">
+        <StackPanel Spacing="14">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{l:T 'Move big folders to another drive'}" Classes="h2" />
+            <TextBlock Classes="subtle" TextWrapping="Wrap"
+                       Text="{l:T 'These folders are large but can live on another drive. DeskMaster copies them, checks the copy, then frees the space here.'}" />
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="{l:T 'Move to'}" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding Move.Destinations}" SelectedItem="{Binding Move.SelectedDestination}" MinWidth="280"
+                      PlaceholderText="{l:T 'No other drive found'}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:DestinationOption">
+                  <TextBlock Text="{Binding Label}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button Content="{l:T 'Browse...'}" Command="{Binding Move.BrowseDestinationCommand}" />
+          </StackPanel>
+
+          <StackPanel Spacing="6" IsVisible="{Binding Move.IsBusy}">
+            <ProgressBar Value="{Binding Move.ProgressValue}" Maximum="100" Height="6"
+                         IsIndeterminate="{Binding Move.ProgressIndeterminate}" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding Move.ProgressText}" Classes="subtle small" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="{l:T 'Cancel'}" Command="{Binding Move.CancelCommand}" />
+            </Grid>
+          </StackPanel>
+
+          <Border Classes="card banner" Padding="12,10"
+                  Classes.error="{Binding Move.MessageIsError}"
+                  IsVisible="{Binding Move.Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding Move.Message}" TextWrapping="Wrap" />
+          </Border>
+
+          <ItemsControl ItemsSource="{Binding Move.SystemDriveCandidates}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:RelocationItemViewModel">
+                <Border Padding="4,10" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource CardBorderBrush}">
+                  <Grid ColumnDefinitions="*,100,Auto">
+                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding PathText}" Classes="subtle small" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontWeight="SemiBold"
+                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" />
+                    <Button Grid.Column="2" Content="{l:T 'Move'}" Command="{Binding MoveCommand}" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border Padding="4,10" IsVisible="{Binding Move.DownloadsOnSystemDrive}">
+            <Grid ColumnDefinitions="*,100,Auto">
+              <StackPanel Spacing="4" VerticalAlignment="Center">
+                <TextBlock Text="{l:T 'Downloads folder'}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Move.DownloadsPath}" Classes="subtle small" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Move.DownloadsLeftText}" Classes="subtle small" TextWrapping="Wrap"
+                           IsVisible="{Binding Move.HasDownloadsLeft}" />
+                <CheckBox IsChecked="{Binding Move.AlsoChangeDownloadsDefault}" IsVisible="{Binding Move.CanChangeDownloadsLocation}"
+                          Content="{l:T 'Save new downloads there too'}" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Text="{Binding Move.DownloadsSizeText}" FontWeight="SemiBold"
+                         HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" />
+              <Button Grid.Column="2" Content="{l:T 'Move'}" Command="{Binding Move.MoveDownloadsCommand}" VerticalAlignment="Center" />
+            </Grid>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <TextBlock Classes="subtle small" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
+                 Text="{l:T 'Want to see exactly what fills your disk? Switch to Pro mode for the folder explorer, treemap and every cleanup rule.'}" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

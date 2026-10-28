@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DeskMaster.App/DeskMaster.App.csproj" />
+    <Project Path="src/DeskMaster.Cli/DeskMaster.Cli.csproj" />
+    <Project Path="src/DeskMaster.Core/DeskMaster.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DeskMaster.App.Tests/DeskMaster.App.Tests.csproj" />
+    <Project Path="tests/DeskMaster.Core.Tests/DeskMaster.Core.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Screenshots/Screenshots.csproj" />
+  </Folder>
+</Solution>

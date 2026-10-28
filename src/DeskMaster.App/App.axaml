@@ -1,0 +1,57 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DeskMaster.App.App"
+             RequestedThemeVariant="Default"
+             Name="DeskMaster">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F4F5F7" />
+          <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="CardBorderBrush" Color="#E2E4E9" />
+          <SolidColorBrush x:Key="SubtleTextBrush" Color="#5D6470" />
+          <SolidColorBrush x:Key="TrackBrush" Color="#E7E9EE" />
+          <SolidColorBrush x:Key="RowHoverBrush" Color="#F2F4F8" />
+          <SolidColorBrush x:Key="SafeBadgeBrush" Color="#E3F4EA" />
+          <SolidColorBrush x:Key="SafeTextBrush" Color="#1D6B3F" />
+          <SolidColorBrush x:Key="CautionBadgeBrush" Color="#FDF1DC" />
+          <SolidColorBrush x:Key="CautionTextBrush" Color="#8A5300" />
+          <SolidColorBrush x:Key="InfoBadgeBrush" Color="#E6EEFD" />
+          <SolidColorBrush x:Key="InfoTextBrush" Color="#1F4FB8" />
+          <SolidColorBrush x:Key="MutedBadgeBrush" Color="#EEEFF2" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#C93C37" />
+          <SolidColorBrush x:Key="SuccessBannerBrush" Color="#E3F4EA" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#16181C" />
+          <SolidColorBrush x:Key="CardBrush" Color="#1F2227" />
+          <SolidColorBrush x:Key="CardBorderBrush" Color="#2E3238" />
+          <SolidColorBrush x:Key="SubtleTextBrush" Color="#A0A7B2" />
+          <SolidColorBrush x:Key="TrackBrush" Color="#30343B" />
+          <SolidColorBrush x:Key="RowHoverBrush" Color="#262A30" />
+          <SolidColorBrush x:Key="SafeBadgeBrush" Color="#173A26" />
+          <SolidColorBrush x:Key="SafeTextBrush" Color="#7FD6A0" />
+          <SolidColorBrush x:Key="CautionBadgeBrush" Color="#3D2E12" />
+          <SolidColorBrush x:Key="CautionTextBrush" Color="#F2C46B" />
+          <SolidColorBrush x:Key="InfoBadgeBrush" Color="#1B2B4D" />
+          <SolidColorBrush x:Key="InfoTextBrush" Color="#8FB3FF" />
+          <SolidColorBrush x:Key="MutedBadgeBrush" Color="#2B2F35" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#F0726C" />
+          <SolidColorBrush x:Key="SuccessBannerBrush" Color="#173A26" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#2F6FEB" />
+        <ColorPaletteResources x:Key="Dark" Accent="#5B8DEF" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://DeskMaster/Styles/AppStyles.axaml" />
+  </Application.Styles>
+</Application>

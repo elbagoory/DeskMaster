@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="using:DeskMaster.App.Localization"
+        x:Class="DeskMaster.App.Views.ConfirmWindow"
+        Width="460" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Title="DeskMaster">
+  <StackPanel Margin="24" Spacing="16">
+    <TextBlock x:Name="TitleText" Classes="h2" TextWrapping="Wrap" />
+    <TextBlock x:Name="MessageText" TextWrapping="Wrap" LineHeight="20" />
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+      <Button x:Name="CancelButton" Content="{l:T 'Cancel'}" IsCancel="True" />
+      <Button x:Name="ConfirmButton" Classes="accent" IsDefault="True" />
+    </StackPanel>
+  </StackPanel>
+</Window>

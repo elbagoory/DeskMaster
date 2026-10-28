@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="using:DeskMaster.App.Localization"
+        xmlns:vm="using:DeskMaster.App.ViewModels"
+        xmlns:views="using:DeskMaster.App.Views"
+        x:Class="DeskMaster.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/deskmaster.ico"
+        Title="DeskMaster"
+        Width="1180" Height="820" MinWidth="760" MinHeight="560"
+        WindowStartupLocation="CenterScreen">
+
+  <DockPanel>
+    <!-- Header -->
+    <Border DockPanel.Dock="Top" Padding="24,16" BorderThickness="0,0,0,1"
+            BorderBrush="{DynamicResource CardBorderBrush}" Background="{DynamicResource CardBrush}">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+          <Image Source="/Assets/deskmaster-64.png" Width="34" Height="34" />
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="DeskMaster" Classes="title" />
+            <TextBlock Text="{Binding PlatformText}" Classes="subtle small" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,16,0">
+          <Border Classes="badge safe" IsVisible="{Binding IsElevated}">
+            <TextBlock Text="{l:T 'Administrator'}" />
+          </Border>
+          <Button Content="{l:T 'Restart as administrator'}" IsVisible="{Binding CanElevate}"
+                  Command="{Binding RestartAsAdminCommand}"
+                  ToolTip.Tip="{l:T 'Unlocks Windows system cleanup items'}" />
+          <Button Content="{l:T 'Refresh'}" Command="{Binding RefreshAllCommand}" />
+          <Button Content="{l:T 'Settings'}" Command="{Binding OpenSettingsCommand}" />
+        </StackPanel>
+
+        <Border Grid.Column="3" Classes="segmented" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal">
+            <RadioButton GroupName="mode" Content="{l:T 'Simple'}" IsChecked="{Binding IsSimpleMode}" />
+            <RadioButton GroupName="mode" Content="{l:T 'Pro'}" IsChecked="{Binding IsProMode}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- Footer -->
+    <Border DockPanel.Dock="Bottom" Padding="24,6" BorderThickness="0,1,0,0"
+            BorderBrush="{DynamicResource CardBorderBrush}">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Classes="subtle small" Text="{Binding Log.LatestMessage}"
+                   TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="1" Classes="subtle small" Text="{Binding VersionText, StringFormat='DeskMaster {0} · open source (MIT)'}" />
+      </Grid>
+    </Border>
+
+    <Panel>
+      <views:SimpleView IsVisible="{Binding IsSimpleMode}" />
+      <views:ProView IsVisible="{Binding IsProMode}" />
+    </Panel>
+  </DockPanel>
+</Window>

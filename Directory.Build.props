@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Version>1.0.0</Version>
+    <Authors>Mostafa Elbagory and DeskMaster contributors</Authors>
+    <Product>DeskMaster</Product>
+    <Copyright>Copyright (c) DeskMaster contributors</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!-- Installed copies update themselves from this repository's GitHub Releases. -->
+    <RepositoryUrl>https://github.com/mostafaelbagory/DeskMaster</RepositoryUrl>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,55 @@
+// Big folders that apps can keep on another drive through an environment variable.
+[
+  {
+    "id": "ollama-models",
+    "name": "Ollama models",
+    "description": "Local AI models downloaded by Ollama. Often 5-50 GB each.",
+    "envVar": "OLLAMA_MODELS",
+    "defaultPaths": { "all": ["{Home}/.ollama/models"], "linux": ["/usr/share/ollama/.ollama/models"] },
+    "targetFolderName": "ollama/models",
+    "closeProcesses": ["ollama", "ollama app"]
+  },
+  {
+    "id": "huggingface",
+    "name": "Hugging Face cache",
+    "description": "Models and datasets downloaded by transformers, diffusers and huggingface-cli.",
+    "envVar": "HF_HOME",
+    "defaultPaths": { "all": ["{Home}/.cache/huggingface"] },
+    "targetFolderName": "huggingface"
+  },
+  {
+    "id": "lmstudio-models",
+    "name": "LM Studio models",
+    "description": "Models downloaded in LM Studio. After moving, also pick the new folder in LM Studio > My Models.",
+    "envVar": "",
+    "defaultPaths": { "all": ["{Home}/.lmstudio/models", "{Home}/.cache/lm-studio/models"] },
+    "targetFolderName": "lmstudio/models",
+    "closeProcesses": ["LM Studio"]
+  },
+  {
+    "id": "nuget-packages",
+    "name": "NuGet packages",
+    "description": ".NET package cache used by every build.",
+    "envVar": "NUGET_PACKAGES",
+    "defaultPaths": { "all": ["{Home}/.nuget/packages"] },
+    "targetFolderName": "nuget/packages",
+    "closeProcesses": ["devenv"]
+  },
+  {
+    "id": "gradle-home",
+    "name": "Gradle home",
+    "description": "Gradle caches, wrappers and daemons.",
+    "envVar": "GRADLE_USER_HOME",
+    "defaultPaths": { "all": ["{Home}/.gradle"] },
+    "targetFolderName": "gradle",
+    "closeProcesses": ["java", "studio64"]
+  },
+  {
+    "id": "pip-cache",
+    "name": "pip cache",
+    "description": "Downloaded Python wheels.",
+    "envVar": "PIP_CACHE_DIR",
+    "defaultPaths": { "windows": ["{LocalAppData}/pip/Cache"], "macos": ["{Cache}/pip"], "linux": ["{Cache}/pip"] },
+    "targetFolderName": "pip-cache"
+  }
+]

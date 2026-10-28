@@ -1,0 +1,471 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="using:DeskMaster.App.Localization"
+             xmlns:vm="using:DeskMaster.App.ViewModels"
+             xmlns:controls="using:DeskMaster.App.Controls"
+             x:Class="DeskMaster.App.Views.ProView"
+             x:DataType="vm:MainViewModel">
+
+  <UserControl.Resources>
+    <StreamGeometry x:Key="FolderIcon">M2,5 C2,4.4 2.4,4 3,4 L9,4 L11,6 L21,6 C21.6,6 22,6.4 22,7 L22,19 C22,19.6 21.6,20 21,20 L3,20 C2.4,20 2,19.6 2,19 Z</StreamGeometry>
+    <StreamGeometry x:Key="FileIcon">M6,2 L14,2 L20,8 L20,21 C20,21.6 19.6,22 19,22 L6,22 C5.4,22 5,21.6 5,21 L5,3 C5,2.4 5.4,2 6,2 Z M14,2 L14,8 L20,8</StreamGeometry>
+    <StreamGeometry x:Key="StackIcon">M4,6 L20,6 L20,8 L4,8 Z M4,11 L20,11 L20,13 L4,13 Z M4,16 L20,16 L20,18 L4,18 Z</StreamGeometry>
+  </UserControl.Resources>
+
+  <TabControl Classes="pro" Margin="16,8,16,12">
+
+    <!-- ============================================================ Explorer -->
+    <TabItem Header="{l:T 'Explorer'}">
+      <ContentControl Content="{Binding Explorer}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="vm:ExplorerViewModel">
+            <DockPanel Margin="0,12,0,0">
+              <!-- Toolbar -->
+              <StackPanel DockPanel.Dock="Top" Spacing="10">
+                <WrapPanel Orientation="Horizontal">
+                  <ComboBox ItemsSource="{Binding Targets}" SelectedItem="{Binding SelectedTarget}" MinWidth="340"
+                            Margin="0,0,8,6" IsEnabled="{Binding !IsScanning}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ScanTarget">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Button Classes="accent" Content="{l:T 'Scan'}" Command="{Binding ScanCommand}" Margin="0,0,8,6"
+                          IsEnabled="{Binding !IsScanning}" />
+                  <Button Content="{l:T 'Scan a folder...'}" Command="{Binding PickFolderCommand}" Margin="0,0,8,6"
+                          IsEnabled="{Binding !IsScanning}" />
+                  <Button Content="{l:T 'Cancel'}" Command="{Binding CancelCommand}" IsVisible="{Binding IsScanning}" Margin="0,0,8,6" />
+                </WrapPanel>
+
+                <StackPanel Spacing="4" IsVisible="{Binding IsScanning}">
+                  <ProgressBar IsIndeterminate="True" Height="4" />
+                  <TextBlock Text="{Binding ProgressText}" Classes="subtle small" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <TextBlock Text="{Binding StatusText}" Classes="subtle small" IsVisible="{Binding !IsScanning}" TextWrapping="Wrap" />
+
+                <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasScan}" Margin="0,4,0,8">
+                  <Button Content="{l:T '↑ Up'}" Command="{Binding UpCommand}" IsEnabled="{Binding CanGoUp}" Margin="0,0,8,0" />
+                  <ItemsControl Grid.Column="1" ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:Breadcrumb">
+                        <StackPanel Orientation="Horizontal">
+                          <Button Classes="link" Content="{Binding Name}" Command="{Binding Go}" />
+                          <TextBlock Text="›" Classes="subtle" VerticalAlignment="Center" Margin="2,0" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding CurrentSummary}" Classes="subtle" VerticalAlignment="Center" />
+                    <TextBlock Text="{l:T 'Sort'}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <ComboBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding Sort}" MinWidth="110">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:Choice"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="{l:T 'Open in file manager'}" Command="{Binding RevealCurrentCommand}" />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+
+              <!-- Body -->
+              <Grid ColumnDefinitions="3*,8,2*" IsVisible="{Binding HasScan}">
+                <Border Classes="card" Padding="6">
+                  <DockPanel>
+                    <Grid DockPanel.Dock="Top" ColumnDefinitions="28,*,90,52,84,76,86,Auto" Margin="10,6,10,6">
+                      <TextBlock Grid.Column="1" Text="{l:T 'Name'}" Classes="subtle small" />
+                      <TextBlock Grid.Column="3" Text="%" Classes="subtle small" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="4" Text="{l:T 'Size'}" Classes="subtle small" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="5" Text="{l:T 'Files'}" Classes="subtle small" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="6" Text="{l:T 'Modified'}" Classes="subtle small" HorizontalAlignment="Right" />
+                    </Grid>
+                    <ListBox x:Name="ChildrenList" Classes="rows" ItemsSource="{Binding Children}" DoubleTapped="OnChildDoubleTapped"
+                             KeyDown="OnChildKeyDown">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:NodeItemViewModel">
+                          <Grid ColumnDefinitions="28,*,90,52,84,76,86,Auto" Background="Transparent">
+                            <Grid.ContextMenu>
+                              <ContextMenu>
+                                <MenuItem Header="{l:T 'Open'}" Command="{Binding OpenCommand}" IsVisible="{Binding CanOpen}" />
+                                <MenuItem Header="{l:T 'Show in file manager'}" Command="{Binding RevealCommand}" />
+                                <Separator />
+                                <MenuItem Header="{l:T 'Move to Recycle Bin'}" Command="{Binding RecycleCommand}" IsEnabled="{Binding CanDelete}" />
+                                <MenuItem Header="{l:T 'Delete permanently...'}" Command="{Binding DeletePermanentlyCommand}" IsEnabled="{Binding CanDelete}" />
+                              </ContextMenu>
+                            </Grid.ContextMenu>
+                            <PathIcon Width="16" Height="16" Data="{StaticResource FolderIcon}" IsVisible="{Binding IsDirectory}"
+                                      Foreground="#E3A92D" />
+                            <PathIcon Width="16" Height="16" Data="{StaticResource FileIcon}" IsVisible="{Binding IsFile}"
+                                      Foreground="{DynamicResource SubtleTextBrush}" />
+                            <PathIcon Width="16" Height="16" Data="{StaticResource StackIcon}" IsVisible="{Binding IsGroup}"
+                                      Foreground="{DynamicResource SubtleTextBrush}" />
+                            <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                       ToolTip.Tip="{Binding FullPath}" />
+                            <ProgressBar Grid.Column="2" Classes="thin" Value="{Binding Percent}" Maximum="100" Margin="8,0" />
+                            <TextBlock Grid.Column="3" Text="{Binding PercentText}" Classes="subtle small" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="4" Text="{Binding SizeText}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="5" Text="{Binding FilesText}" Classes="subtle small" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="6" Text="{Binding ModifiedText}" Classes="subtle small" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            <Button Grid.Column="7" Classes="link" Content="{l:T 'Show'}" Command="{Binding RevealCommand}" Margin="8,0,0,0"
+                                    ToolTip.Tip="{l:T 'Show in file manager'}" IsVisible="{Binding !IsGroup}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                  </DockPanel>
+                </Border>
+
+                <Border Grid.Column="2" Classes="card" Padding="8">
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{l:T 'Treemap · click a folder to open it · right-click a row for delete options'}" Classes="subtle small" Margin="4,0,0,8"
+                               TextWrapping="Wrap" />
+                    <controls:TreemapControl Items="{Binding TreemapItems}" OpenCommand="{Binding OpenNodeCommand}" />
+                  </DockPanel>
+                </Border>
+              </Grid>
+            </DockPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </TabItem>
+
+    <!-- ============================================================ Largest files -->
+    <TabItem Header="{l:T 'Largest files'}">
+      <ContentControl Content="{Binding Explorer}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="vm:ExplorerViewModel">
+            <DockPanel Margin="0,12,0,0">
+              <TextBlock DockPanel.Dock="Top" Classes="subtle" Margin="0,0,0,10" TextWrapping="Wrap"
+                         Text="{l:T 'The biggest single files found by the last scan. Run a scan in Explorer first.'}" />
+              <Border Classes="card" Padding="6">
+                <ListBox Classes="rows" ItemsSource="{Binding LargestFiles}">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:NodeItemViewModel">
+                      <Grid ColumnDefinitions="90,*,96,Auto,Auto" Background="Transparent">
+                        <Grid.ContextMenu>
+                          <ContextMenu>
+                            <MenuItem Header="{l:T 'Show in file manager'}" Command="{Binding RevealCommand}" />
+                            <MenuItem Header="{l:T 'Move to Recycle Bin'}" Command="{Binding RecycleCommand}" />
+                            <MenuItem Header="{l:T 'Delete permanently...'}" Command="{Binding DeletePermanentlyCommand}" />
+                          </ContextMenu>
+                        </Grid.ContextMenu>
+                        <TextBlock Text="{Binding SizeText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Spacing="2" Margin="8,0">
+                          <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding FullPath}" Classes="subtle small" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Text="{Binding ModifiedText}" Classes="subtle small" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                        <Button Grid.Column="3" Classes="link" Content="{l:T 'Show'}" Command="{Binding RevealCommand}" Margin="8,0,0,0" />
+                        <Button Grid.Column="4" Classes="link" Content="{l:T 'Recycle'}" Command="{Binding RecycleCommand}" Margin="4,0,0,0"
+                                ToolTip.Tip="{l:T 'Move to Recycle Bin'}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </Border>
+            </DockPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </TabItem>
+
+    <!-- ============================================================ Duplicates -->
+    <TabItem Header="{l:T 'Duplicates'}">
+      <ContentControl Content="{Binding Duplicates}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="vm:DuplicatesViewModel">
+            <DockPanel Margin="0,12,0,0">
+              <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,10">
+                <WrapPanel Orientation="Horizontal">
+                  <TextBox Text="{Binding ScanPath}" MinWidth="380" Margin="0,0,8,6" PlaceholderText="{l:T 'Folder or drive to search'}" />
+                  <Button Content="{l:T 'Browse...'}" Command="{Binding BrowseCommand}" Margin="0,0,8,6" IsEnabled="{Binding !IsScanning}" />
+                  <TextBlock Text="{l:T 'Ignore files under'}" VerticalAlignment="Center" Margin="4,0,6,6" />
+                  <ComboBox ItemsSource="{Binding MinSizeOptions}" SelectedItem="{Binding MinSizeMb}" Margin="0,0,4,6" />
+                  <TextBlock Text="{l:T 'MB'}" VerticalAlignment="Center" Margin="0,0,12,6" />
+                  <Button Classes="accent" Content="{l:T 'Find duplicates'}" Command="{Binding ScanCommand}" Margin="0,0,8,6"
+                          IsEnabled="{Binding !IsScanning}" />
+                  <Button Content="{l:T 'Cancel'}" Command="{Binding CancelCommand}" IsVisible="{Binding IsScanning}" Margin="0,0,8,6" />
+                </WrapPanel>
+                <StackPanel Spacing="4" IsVisible="{Binding IsScanning}">
+                  <ProgressBar IsIndeterminate="True" Height="4" />
+                  <TextBlock Text="{Binding ProgressText}" Classes="subtle small" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <TextBlock Classes="subtle small" TextWrapping="Wrap"
+                           Text="{l:T 'Only remove copies of your own files (photos, videos, documents, downloads). Duplicates inside program folders are usually needed by the program.'}" />
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Summary}" Classes="subtle" TextWrapping="Wrap" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding SelectionText}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                    <Button Content="{l:T 'Select all but newest'}" Command="{Binding SelectAllButNewestCommand}" />
+                    <Button Content="{l:T 'Select none'}" Command="{Binding SelectNoneCommand}" />
+                    <Button Classes="accent" Content="{l:T 'Move selected to Recycle Bin'}" Command="{Binding RecycleSelectedCommand}"
+                            IsEnabled="{Binding HasSelection}" />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Groups}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DuplicateGroupViewModel">
+                      <Border Classes="card" Padding="12" Margin="0,0,0,10">
+                        <StackPanel Spacing="6">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1" Text="{Binding Summary}" Classes="subtle small" VerticalAlignment="Center" />
+                          </Grid>
+                          <ItemsControl ItemsSource="{Binding Files}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="vm:DuplicateFileViewModel">
+                                <Grid ColumnDefinitions="Auto,*,130,Auto" Margin="0,2">
+                                  <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" />
+                                  <TextBlock Grid.Column="1" Text="{Binding Path}" Classes="mono" TextTrimming="CharacterEllipsis"
+                                             VerticalAlignment="Center" ToolTip.Tip="{Binding Path}" />
+                                  <TextBlock Grid.Column="2" Text="{Binding ModifiedText}" Classes="subtle small" VerticalAlignment="Center"
+                                             HorizontalAlignment="Right" />
+                                  <Button Grid.Column="3" Classes="link" Content="{l:T 'Show'}" Command="{Binding RevealCommand}" Margin="8,0,0,0" />
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </DockPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </TabItem>
+
+    <!-- ============================================================ Cleanup -->
+    <TabItem Header="{l:T 'Cleanup'}">
+      <ContentControl Content="{Binding Cleanup}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="vm:CleanupViewModel">
+            <DockPanel Margin="0,12,0,0">
+              <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,10">
+                <Grid ColumnDefinitions="*,Auto">
+                  <WrapPanel Orientation="Horizontal">
+                    <Button Content="{l:T 'Analyze'}" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" Margin="0,0,8,6" />
+                    <Button Content="{l:T 'Select recommended'}" Command="{Binding SelectRecommendedCommand}" Margin="0,0,8,6" />
+                    <Button Content="{l:T 'Select all ready'}" Command="{Binding SelectAllReadyCommand}" Margin="0,0,8,6" />
+                    <Button Content="{l:T 'Select none'}" Command="{Binding SelectNoneCommand}" Margin="0,0,8,6" />
+                    <CheckBox Content="{l:T 'Show empty and unavailable'}" IsChecked="{Binding ShowEmpty}" Margin="4,0,0,6" />
+                  </WrapPanel>
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Top">
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock Text="{Binding SelectedSizeText}" Classes="h2" HorizontalAlignment="Right" />
+                      <TextBlock Text="{Binding SelectedCountText}" Classes="subtle small" HorizontalAlignment="Right" />
+                    </StackPanel>
+                    <Button Classes="accent big" Content="{l:T 'Clean selected'}" Command="{Binding CleanSelectedCommand}">
+                      <Button.IsEnabled>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                          <Binding Path="HasSelection" />
+                          <Binding Path="!IsBusy" />
+                        </MultiBinding>
+                      </Button.IsEnabled>
+                    </Button>
+                  </StackPanel>
+                </Grid>
+                <StackPanel Spacing="4" IsVisible="{Binding IsBusy}">
+                  <ProgressBar Value="{Binding ProgressValue}" Maximum="100" Height="4" />
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding ProgressText}" Classes="subtle small" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="{l:T 'Cancel'}" Command="{Binding CancelCleanCommand}" IsVisible="{Binding IsCleaning}" />
+                  </Grid>
+                </StackPanel>
+                <Border Classes="card" Padding="12,10" Background="{DynamicResource SuccessBannerBrush}" BorderThickness="0"
+                        IsVisible="{Binding ResultMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="{Binding ResultMessage}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                </Border>
+              </StackPanel>
+
+              <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Groups}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FindingGroupViewModel">
+                      <StackPanel Spacing="6" Margin="0,0,0,18">
+                        <Grid ColumnDefinitions="*,Auto" Margin="4,0">
+                          <TextBlock Text="{Binding Name}" Classes="h3" />
+                          <TextBlock Grid.Column="1" Text="{Binding TotalText}" Classes="subtle" />
+                        </Grid>
+                        <Border Classes="card" Padding="4">
+                          <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="vm:FindingItemViewModel">
+                                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,1"
+                                          Background="Transparent" BorderThickness="0">
+                                  <Expander.Header>
+                                    <Grid ColumnDefinitions="Auto,*,Auto,96">
+                                      <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding IsReady}" VerticalAlignment="Center" />
+                                      <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                 TextTrimming="CharacterEllipsis" Margin="4,0,8,0" />
+                                      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <Border Classes="badge safe" IsVisible="{Binding IsSafe}"><TextBlock Text="{l:T 'Safe'}" /></Border>
+                                        <Border Classes="badge caution" IsVisible="{Binding IsCaution}"><TextBlock Text="{l:T 'Caution'}" /></Border>
+                                        <Border Classes="badge" IsVisible="{Binding RequiresAdmin}"><TextBlock Text="{l:T 'Admin'}" /></Border>
+                                        <Border Classes="badge info" IsVisible="{Binding !IsReady}"><TextBlock Text="{Binding StatusText}" /></Border>
+                                      </StackPanel>
+                                      <TextBlock Grid.Column="3" Text="{Binding SizeText}" FontWeight="SemiBold"
+                                                 HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                    </Grid>
+                                  </Expander.Header>
+                                  <StackPanel Spacing="8" Margin="34,0,8,6">
+                                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding Notes}" Classes="subtle small" TextWrapping="Wrap" IsVisible="{Binding HasNotes}" />
+                                    <TextBlock Text="{Binding FilesText}" Classes="subtle small" />
+                                    <TextBlock Text="{l:T 'Locations'}" Classes="subtle small" FontWeight="SemiBold" />
+                                    <SelectableTextBlock Text="{Binding PathsText}" Classes="mono" TextWrapping="Wrap" />
+                                    <StackPanel IsVisible="{Binding HasCommand}" Spacing="2">
+                                      <TextBlock Text="{l:T 'Command'}" Classes="subtle small" FontWeight="SemiBold" />
+                                      <SelectableTextBlock Text="{Binding CommandText}" Classes="mono" />
+                                    </StackPanel>
+                                    <Button Content="{l:T 'Open location'}" Command="{Binding OpenLocationCommand}" IsVisible="{Binding HasPaths}"
+                                            HorizontalAlignment="Left" />
+                                  </StackPanel>
+                                </Expander>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </Border>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </DockPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </TabItem>
+
+    <!-- ============================================================ Move -->
+    <TabItem Header="{l:T 'Move to another drive'}">
+      <ContentControl Content="{Binding Move}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="vm:MoveViewModel">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" Margin="0,12,0,0">
+              <StackPanel Spacing="14" MaxWidth="1000" HorizontalAlignment="Left">
+                <TextBlock Classes="subtle" TextWrapping="Wrap"
+                           Text="{l:T 'Big app folders are copied to the new drive, the copy is verified, and only then is the original removed. Apps are pointed at the new place through an environment variable.'}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="{l:T 'Destination'}" VerticalAlignment="Center" />
+                  <ComboBox ItemsSource="{Binding Destinations}" SelectedItem="{Binding SelectedDestination}" MinWidth="300"
+                            PlaceholderText="{l:T 'No other drive found'}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:DestinationOption">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Button Content="{l:T 'Browse...'}" Command="{Binding BrowseDestinationCommand}" />
+                  <Button Content="{l:T 'Refresh'}" Command="{Binding DetectCommand}" />
+                </StackPanel>
+
+                <StackPanel Spacing="4" IsVisible="{Binding IsBusy}">
+                  <ProgressBar Value="{Binding ProgressValue}" Maximum="100" Height="6" IsIndeterminate="{Binding ProgressIndeterminate}" />
+                  <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding ProgressText}" Classes="subtle small" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="{l:T 'Cancel'}" Command="{Binding CancelCommand}" />
+            </Grid>
+                </StackPanel>
+                <Border Classes="card banner" Padding="12,10"
+                        Classes.error="{Binding MessageIsError}"
+                        IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                  <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                </Border>
+
+                <Border Classes="card" Padding="8">
+                  <StackPanel>
+                    <TextBlock Text="{l:T 'App folders'}" Classes="h3" Margin="8,4,8,8" />
+                    <TextBlock Text="{l:T 'No movable app folders were found.'}" Classes="subtle" Margin="8,0,8,8"
+                               IsVisible="{Binding !HasCandidates}" />
+                    <ItemsControl ItemsSource="{Binding Candidates}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RelocationItemViewModel">
+                          <Border Padding="8,10" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource CardBorderBrush}">
+                            <Grid ColumnDefinitions="*,100,Auto">
+                              <StackPanel Spacing="3">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                  <Border Classes="badge safe" IsVisible="{Binding IsMoved}"><TextBlock Text="{l:T 'Not on system drive'}" /></Border>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Description}" Classes="subtle small" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding PathText}" Classes="mono" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding HowText}" Classes="subtle small" />
+                              </StackPanel>
+                              <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontWeight="SemiBold" HorizontalAlignment="Right"
+                                         VerticalAlignment="Center" Margin="0,0,14,0" />
+                              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <Button Content="{l:T 'Show'}" Command="{Binding RevealCommand}" />
+                                <Button Classes="accent" Content="{l:T 'Move'}" Command="{Binding MoveCommand}" IsVisible="{Binding IsOnSystemDrive}" />
+                              </StackPanel>
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <Border Classes="card">
+                  <Grid ColumnDefinitions="*,100,Auto">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="{l:T 'Downloads folder'}" Classes="h3" />
+                      <TextBlock Text="{Binding DownloadsPath}" Classes="mono" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding DownloadsLeftText}" Classes="subtle small" TextWrapping="Wrap"
+                                 IsVisible="{Binding HasDownloadsLeft}" />
+                      <TextBlock Classes="subtle small" TextWrapping="Wrap"
+                                 Text="{l:T 'Moves files without overwriting anything; same-name files go to a ’duplicates’ subfolder. Unfinished downloads stay.'}" />
+                      <CheckBox IsChecked="{Binding AlsoChangeDownloadsDefault}" IsVisible="{Binding CanChangeDownloadsLocation}"
+                                Content="{l:T 'Also save new downloads there'}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding DownloadsSizeText}" FontWeight="SemiBold" HorizontalAlignment="Right"
+                               VerticalAlignment="Center" Margin="0,0,14,0" />
+                    <Button Grid.Column="2" Classes="accent" Content="{l:T 'Move'}" Command="{Binding MoveDownloadsCommand}" VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </TabItem>
+
+    <!-- ============================================================ Activity -->
+    <TabItem Header="{l:T 'Activity'}">
+      <ContentControl Content="{Binding Log}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="vm:ActivityLogViewModel">
+            <DockPanel Margin="0,12,0,0">
+              <Button DockPanel.Dock="Top" Content="{l:T 'Clear'}" Command="{Binding ClearCommand}" HorizontalAlignment="Right" Margin="0,0,0,8" />
+              <Border Classes="card" Padding="6">
+                <ListBox Classes="rows" ItemsSource="{Binding Entries}">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LogEntry">
+                      <Grid ColumnDefinitions="80,*">
+                        <TextBlock Text="{Binding TimeText}" Classes="mono subtle" />
+                        <SelectableTextBlock Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap"
+                                             Foreground="{DynamicResource DangerBrush}" IsVisible="{Binding IsError}" />
+                        <SelectableTextBlock Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap" IsVisible="{Binding !IsError}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </Border>
+            </DockPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </TabItem>
+  </TabControl>
+</UserControl>
